@@ -1,0 +1,7 @@
+title;parent_task;max_xp
+C2_SimpleBashUtils;null;300
+C3_s21_string+;C2_SimpleBashUtils;500
+C4_s21_decimal;C3_s21_string+;350
+С5_21_matrix;C4_s21_decimal;200
+C6_SmartCalc_v1.0;С5_21_matrix;500
+C7_3DViewer_v1.0;C6_SmartCalc_v1.0;750

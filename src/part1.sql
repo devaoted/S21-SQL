@@ -1,5 +1,5 @@
--- Enum status
-CREATE TYPE status AS ENUM ('start', 'success', 'failure');
+-- enum status
+-- CREATE TYPE status AS ENUM ('start', 'success', 'failure');
 
 -- Таблицы
 CREATE TABLE IF NOT EXISTS peers (
@@ -62,289 +62,50 @@ CREATE TABLE IF NOT EXISTS xp (
 
 CREATE TABLE IF NOT EXISTS time_tracking (
     id bigint primary key,
+    peer text,
     date date,
     time time,
     state int
 );
 
 -- Процедуры импорта и экспорта CSV
-
--- 1. Peers
-CREATE OR REPLACE PROCEDURE import_peers_csv(IN delimiter TEXT) AS 
+CREATE OR REPLACE PROCEDURE import_csv(
+    IN table_name text,
+    IN csv_file text,
+    IN delimiter char DEFAULT ';'
+) AS 
     $$
-    COPY peers (
-        nickname,
-        birthday
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_peers_csv(IN delimiter TEXT) AS 
+    DECLARE
+        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
+    BEGIN
+        EXECUTE format('COPY %s FROM ''%s'' DELIMITER ''%s'' CSV HEADER;', table_name, data_path || csv_file, delimiter);
+    END;
     $$
-    COPY peers (
-        nickname,
-        birthday
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
+LANGUAGE plpgsql;
 
--- 2. Tasks
-CREATE OR REPLACE PROCEDURE import_tasks_csv(IN delimiter TEXT) AS 
+CREATE OR REPLACE PROCEDURE export_csv(
+    IN table_name text,
+    IN csv_file text,
+    IN delimiter char DEFAULT ';'
+) AS 
     $$
-    COPY tasks (
-        title, 
-        parent_task,
-        max_xp
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
+    DECLARE
+        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
+    BEGIN
+        EXECUTE format('COPY %s TO ''%s'' DELIMITER ''%s'' CSV HEADER;', table_name, data_path || csv_file, delimiter);
+    END;
+    $$
+LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE export_tasks_csv(IN delimiter TEXT) AS 
-    $$
-    COPY tasks (
-        title, 
-        parent_task,
-        max_xp
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 3. p2p
-CREATE OR REPLACE PROCEDURE import_p2p_csv(IN delimiter TEXT) AS 
-    $$
-    COPY p2p (
-        id,
-        check_id,
-        checking_peer,
-        state, 
-        time
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_p2p_csv(IN delimiter TEXT) AS 
-    $$
-    COPY p2p (
-        id,
-        check_id,
-        checking_peer,
-        state, 
-        time
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 4. verter
-CREATE OR REPLACE PROCEDURE import_verter_csv(IN delimiter TEXT) AS 
-    $$
-    COPY verter (
-        id,
-        check_id,
-        state,
-        time
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_verter_csv(IN delimiter TEXT) AS 
-    $$
-    COPY verter (
-        id,
-        check_id,
-        state,
-        time
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 5. checks
-CREATE OR REPLACE PROCEDURE import_checks_csv(IN delimiter TEXT) AS 
-    $$
-    COPY checks (
-        id,
-        peer,
-        task,
-        date
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_checks_csv(IN delimiter TEXT) AS 
-    $$
-    COPY checks (
-        id,
-        peer,
-        task,
-        date
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 7. transferred_points
-CREATE OR REPLACE PROCEDURE import_transfer_csv(IN delimiter TEXT) AS 
-    $$
-    COPY transferred_points (
-        id,
-        checking_peer,
-        checked_peer,
-        points_amount
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_transfer_csv(IN delimiter TEXT) AS 
-    $$
-    COPY transferred_points (
-        id,
-        checking_peer,
-        checked_peer,
-        points_amount
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
---  8. friends
-CREATE OR REPLACE PROCEDURE import_friends_csv(IN delimiter TEXT) AS 
-    $$
-    COPY friends (
-        id,
-        peer1,
-        peer2
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_friends_csv(IN delimiter TEXT) AS 
-    $$
-    COPY friends (
-        id,
-        peer1,
-        peer2
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 9. recommendations
-CREATE OR REPLACE PROCEDURE import_recs_csv(IN delimiter TEXT) AS 
-    $$
-    COPY recommendations (
-        id,
-        peer,
-        recommended_peer
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_recs_csv(IN delimiter TEXT) AS 
-    $$
-    COPY recommendations (
-        id,
-        peer,
-        recommended_peer
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 10. xp 
-CREATE OR REPLACE PROCEDURE import_xp_csv(IN delimiter TEXT) AS 
-    $$
-    COPY xp (
-        id,
-        check_id,
-        xp_amount
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_xp_csv(IN delimiter TEXT) AS 
-    $$
-    COPY xp (
-        id,
-        check_id,
-        xp_amount
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
--- 11. time_tracking 
-CREATE OR REPLACE PROCEDURE import_track_csv(IN delimiter TEXT) AS 
-    $$
-    COPY time_tracking (
-        id,
-        date,
-        time, 
-        state
-    )
-    FROM filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
-
-CREATE OR REPLACE PROCEDURE export_track_csv(IN delimiter TEXT) AS 
-    $$
-    COPY time_tracking (
-        id,
-        date,
-        time, 
-        state
-    )
-    TO filepath
-    WITH DELIMITER delimiter
-    CSV HEADER;
-    $$ 
-LANGUAGE sql;
+-- Создание базы данных
+SET datestyle = dmy;
+CALL import_csv('peers', 'peers.csv', ';');
+CALL import_csv('tasks', 'tasks.csv', ';');
+CALL import_csv('checks', 'checks.csv', ';');
+CALL import_csv('friends', 'friends.csv', ';');
+CALL import_csv('recommendations', 'recommends.csv', ';');
+CALL import_csv('time_tracking', 'timetrack.csv', ';');
+CALL import_csv('transferred_points', 'transfer.csv', ';');
+CALL import_csv('verter', 'verter.csv', ';');
+CALL import_csv('xp', 'xp.csv', ';');
+CALL import_csv('p2p', 'p2p.csv', ';');

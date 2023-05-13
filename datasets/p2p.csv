@@ -1,0 +1,7 @@
+id;check_id;checking_peer;state;time
+1;1;toster;start;15:00:00
+2;1;toster;success;15:20:00
+3;3;pizza;start;15:30:00
+4;3;pizza;success;15:50:00
+5;5;gifts;start;16:00:00
+6;5;gifts;success;16:25:00

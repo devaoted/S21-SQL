@@ -1,0 +1,6 @@
+id;checking_peer;checked_peer;points_amount
+1;toster;gifts;1
+2;puzzle;toster;1
+3;pizza;puzzle;1
+4;monster;pizza;1
+5;gifts;monster;1
