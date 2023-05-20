@@ -1,4 +1,4 @@
--- 1
+-- 1 hello
 CREATE OR REPLACE FUNCTION get_transferred_points()
 RETURNS TABLE (peer1 text, peer2 text, points_amount integer) AS $$
 BEGIN
