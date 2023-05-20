@@ -1,13 +1,18 @@
--- 1 hello
+-- 1
 CREATE OR REPLACE FUNCTION get_transferred_points()
-RETURNS TABLE (peer1 text, peer2 text, points_amount integer) AS $$
+RETURNS TABLE (Peer1 text, Peer2 text, PointsAmount int) AS $$
 BEGIN
     RETURN QUERY
-    SELECT t1."Ник пира 1", t1."Ник пира 2", t1."Количество переданных пир поинтов" - COALESCE(t2."Количество переданных пир поинтов", 0)
-    FROM transferred_points t1
-    LEFT JOIN transferred_points t2 ON t1.checking_peer = t2.checked_peer AND t1. = t2."Ник пира 1"
-    WHERE t1."Количество переданных пир поинтов" <> 0;
-
+    SELECT tp1.checking_peer AS peer1, tp1.checked_peer AS peer2, tp1.points_amount - COALESCE(tp2.points_amount, 0) AS number
+    FROM transferred_points tp1
+    LEFT JOIN transferred_points tp2 ON tp1.checked_peer = tp2.checking_peer AND tp1.checking_peer = tp2.checked_peer
+     WHERE tp1.checking_peer < tp1.checked_peer
+        OR (tp1.checking_peer > tp1.checked_peer AND tp2.checked_peer is NULL);
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 2
+
+
+

@@ -23,12 +23,6 @@ CREATE TABLE IF NOT EXISTS p2p (
     time time
 );
 
-CREATE TABLE IF NOT EXISTS verter (
-    id serial primary key,
-    check_id bigint,
-    state status,
-    time time
-);
 
 CREATE TABLE IF NOT EXISTS checks (
     id serial primary key,
@@ -41,7 +35,7 @@ CREATE TABLE IF NOT EXISTS transferred_points (
     id serial primary key,
     checking_peer text,
     checked_peer text,
-    points_amount float
+    points_amount int
 );
 
 CREATE TABLE IF NOT EXISTS friends (
