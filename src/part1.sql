@@ -1,5 +1,7 @@
--- enum status
 -- CREATE TYPE status AS ENUM ('start', 'success', 'failure');
+
+-- Для пересоздания базы, раскомменчиваем и запускаем всё.
+-- DROP TABLE peers, tasks, p2p, verter, checks, transferred_points, friends, recommendations, xp, time_tracking;
 
 -- Таблицы
 CREATE TABLE IF NOT EXISTS peers (
@@ -14,7 +16,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 CREATE TABLE IF NOT EXISTS p2p (
-    id bigint primary key,
+    id serial primary key,
     check_id bigint,
     checking_peer text,
     state status,
@@ -22,46 +24,46 @@ CREATE TABLE IF NOT EXISTS p2p (
 );
 
 CREATE TABLE IF NOT EXISTS verter (
-    id bigint primary key,
+    id serial primary key,
     check_id bigint,
     state status,
     time time
 );
 
 CREATE TABLE IF NOT EXISTS checks (
-    id bigint primary key,
+    id serial primary key,
     peer text,
     task text,
     date date
 );
 
 CREATE TABLE IF NOT EXISTS transferred_points (
-    id bigint primary key,
+    id serial primary key,
     checking_peer text,
     checked_peer text,
     points_amount float
 );
 
 CREATE TABLE IF NOT EXISTS friends (
-    id bigint primary key,
+    id serial primary key,
     peer1 text,
     peer2 text
 );
 
 CREATE TABLE IF NOT EXISTS recommendations (
-    id bigint primary key,
+    id serial primary key,
     peer text,
     recommended_peer text
 );
 
 CREATE TABLE IF NOT EXISTS xp (
-    id bigint primary key,
+    id serial primary key,
     check_id bigint,
     xp_amount float
 );
 
 CREATE TABLE IF NOT EXISTS time_tracking (
-    id bigint primary key,
+    id serial primary key,
     peer text,
     date date,
     time time,
@@ -109,3 +111,9 @@ CALL import_csv('transferred_points', 'transfer.csv', ';');
 CALL import_csv('verter', 'verter.csv', ';');
 CALL import_csv('xp', 'xp.csv', ';');
 CALL import_csv('p2p', 'p2p.csv', ';');
+
+SELECT SETVAL('checks_id_seq', (SELECT MAX(id) FROM checks));
+SELECT SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
+SELECT SETVAL('verter_id_seq', (SELECT MAX(id) FROM verter));
+SELECT SETVAL('transferred_points_id_seq', (SELECT MAX(id) FROM transferred_points));
+SELECT SETVAL('xp_id_seq', (SELECT MAX(id) FROM xp));
