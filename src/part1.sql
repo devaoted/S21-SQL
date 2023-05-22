@@ -5,60 +5,66 @@
 
 -- Таблицы
 CREATE TABLE IF NOT EXISTS peers (
-    nickname text primary key,
+    nickname text PRIMARY KEY,
     birthday date
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
-    title text primary key,
-    parent_task text,
+    title text PRIMARY KEY,
+    parent_task text REFERENCES tasks,
     max_xp float
 );
 
-CREATE TABLE IF NOT EXISTS p2p (
-    id serial primary key,
-    check_id bigint,
-    checking_peer text,
+CREATE TABLE IF NOT EXISTS checks (
+    id serial PRIMARY KEY,
+    peer text REFERENCES peers,
+    task text REFERENCES tasks,
+    date date
+);
+
+CREATE TABLE IF NOT EXISTS verter (
+    id serial PRIMARY KEY,
+    check_id bigint REFERENCES checks,
     state status,
     time time
 );
 
-
-CREATE TABLE IF NOT EXISTS checks (
-    id serial primary key,
-    peer text,
-    task text,
-    date date
+CREATE TABLE IF NOT EXISTS p2p (
+    id serial PRIMARY KEY,
+    check_id bigint REFERENCES checks,
+    checking_peer text REFERENCES peers,
+    state status,
+    time time
 );
 
 CREATE TABLE IF NOT EXISTS transferred_points (
-    id serial primary key,
-    checking_peer text,
-    checked_peer text,
+    id serial PRIMARY KEY,
+    checking_peer text REFERENCES peers,
+    checked_peer text REFERENCES peers,
     points_amount int
 );
 
 CREATE TABLE IF NOT EXISTS friends (
-    id serial primary key,
-    peer1 text,
-    peer2 text
+    id serial PRIMARY KEY,
+    peer1 text REFERENCES peers,
+    peer2 text REFERENCES peers
 );
 
 CREATE TABLE IF NOT EXISTS recommendations (
-    id serial primary key,
-    peer text,
-    recommended_peer text
+    id serial PRIMARY KEY,
+    peer text REFERENCES peers,
+    recommended_peer text REFERENCES peers
 );
 
 CREATE TABLE IF NOT EXISTS xp (
-    id serial primary key,
-    check_id bigint,
+    id serial PRIMARY KEY,
+    check_id bigint REFERENCES checks,
     xp_amount float
 );
 
 CREATE TABLE IF NOT EXISTS time_tracking (
-    id serial primary key,
-    peer text,
+    id serial PRIMARY KEY,
+    peer text REFERENCES peers,
     date date,
     time time,
     state int
@@ -74,7 +80,7 @@ CREATE OR REPLACE PROCEDURE import_csv(
     DECLARE
         data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
     BEGIN
-        EXECUTE format('COPY %s FROM ''%s'' DELIMITER ''%s'' CSV HEADER;', table_name, data_path || csv_file, delimiter);
+        EXECUTE format('COPY %s FROM ''%s'' DELIMITER ''%s'' CSV HEADER NULL AS ''null'';', table_name, data_path || csv_file, delimiter);
     END;
     $$
 LANGUAGE plpgsql;
@@ -88,7 +94,7 @@ CREATE OR REPLACE PROCEDURE export_csv(
     DECLARE
         data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
     BEGIN
-        EXECUTE format('COPY %s TO ''%s'' DELIMITER ''%s'' CSV HEADER;', table_name, data_path || csv_file, delimiter);
+        EXECUTE format('COPY %s TO ''%s'' DELIMITER ''%s'' CSV HEADER NULL AS ''null'';', table_name, data_path || csv_file, delimiter);
     END;
     $$
 LANGUAGE plpgsql;
