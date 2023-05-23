@@ -22,42 +22,6 @@ CREATE TABLE IF NOT EXISTS checks (
     date date
 );
 
-CREATE OR REPLACE FUNCTION ch_p2p (
-    p_check_id bigint,
-    p_checking_peer text,
-    p_state status
-)
-RETURNS BOOLEAN
-AS $$
-BEGIN
-    IF (
-        WITH checked AS (
-            SELECT peer, task FROM checks WHERE id = p_check_id
-        )
-        SELECT (
-            SELECT COUNT(*)
-            FROM p2p JOIN checks ON p2p.check_id = checks.id
-                INNER JOIN checked ON checks.peer = checked.peer
-                    AND checks.task = checked.task
-            WHERE p2p.checking_peer = p_checking_peer
-        ) % 2 = 0
-    ) THEN
-        RETURN p_state = 'start';
-    ELSE
-        RETURN p_state != 'start';
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TABLE IF NOT EXISTS p2p (
-    id serial PRIMARY KEY,
-    check_id bigint REFERENCES checks,
-    checking_peer text REFERENCES peers,
-    state status,
-    time time,
-    CHECK (ch_p2p(check_id, checking_peer, state))
-);
-
 CREATE OR REPLACE FUNCTION ch_verter (
     p_check_id bigint
 )
@@ -76,6 +40,74 @@ CREATE TABLE IF NOT EXISTS verter (
     state status,
     time time,
     CHECK (ch_verter(check_id))
+);
+
+CREATE OR REPLACE FUNCTION checks_status (
+    p_check_id bigint
+)
+RETURNS status
+AS $$
+BEGIN
+    IF (
+        EXISTS (
+            SELECT * FROM verter WHERE check_id = p_check_id
+        )
+    ) THEN
+        RETURN (
+            SELECT state FROM verter WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
+        );
+    ELSE
+        RETURN (
+            SELECT state FROM p2p WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION ch_p2p (
+    p_check_id bigint,
+    p_checking_peer text,
+    p_state status
+)
+RETURNS BOOLEAN
+AS $$
+DECLARE 
+    v_parent_task text;
+BEGIN
+    IF (
+        WITH checked AS (
+            SELECT peer, task FROM checks WHERE id = p_check_id
+        )
+        SELECT (
+            SELECT COUNT(*)
+            FROM p2p JOIN checks ON p2p.check_id = checks.id
+                INNER JOIN checked ON checks.peer = checked.peer
+                    AND checks.task = checked.task
+            WHERE p2p.checking_peer = p_checking_peer
+        ) % 2 = 0
+    ) THEN
+        v_parent_task := (
+            WITH checked AS (
+                SELECT peer, task FROM checks WHERE id = p_check_id
+            )
+            SELECT parent_task FROM tasks INNER JOIN checked ON title = checked.task
+        );
+        RETURN p_state = 'start' AND (v_parent_task IS NULL OR EXISTS (
+            SELECT id FROM checks WHERE task = v_parent_task AND checks_status(id) = 'success'
+        ));
+    ELSE
+        RETURN p_state != 'start';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS p2p (
+    id serial PRIMARY KEY,
+    check_id bigint REFERENCES checks,
+    checking_peer text REFERENCES peers,
+    state status,
+    time time,
+    CHECK (ch_p2p(check_id, checking_peer, state))
 );
 
 CREATE TABLE IF NOT EXISTS transferred_points (
@@ -176,25 +208,3 @@ SELECT SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
 SELECT SETVAL('verter_id_seq', (SELECT MAX(id) FROM verter));
 SELECT SETVAL('transferred_points_id_seq', (SELECT MAX(id) FROM transferred_points));
 SELECT SETVAL('xp_id_seq', (SELECT MAX(id) FROM xp));
-
-CREATE OR REPLACE FUNCTION checks_status (
-    p_check_id bigint
-)
-RETURNS status
-AS $$
-BEGIN
-    IF (
-        EXISTS (
-            SELECT * FROM verter WHERE check_id = p_check_id
-        )
-    ) THEN
-        RETURN (
-            SELECT state FROM verter WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
-        );
-    ELSE
-        RETURN (
-            SELECT state FROM p2p WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
-        );
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
