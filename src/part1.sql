@@ -22,13 +22,6 @@ CREATE TABLE IF NOT EXISTS checks (
     date date
 );
 
-CREATE TABLE IF NOT EXISTS verter (
-    id serial PRIMARY KEY,
-    check_id bigint REFERENCES checks,
-    state status,
-    time time
-);
-
 CREATE OR REPLACE FUNCTION ch_p2p (
     p_check_id bigint,
     p_checking_peer text,
@@ -63,6 +56,22 @@ CREATE TABLE IF NOT EXISTS p2p (
     state status,
     time time,
     CHECK (ch_p2p(check_id, checking_peer, state))
+);
+
+CREATE OR REPLACE FUNCTION ch_verter (
+    p_check_id bigint
+)
+RETURNS BOOLEAN
+RETURN EXISTS (
+        SELECT * FROM p2p WHERE check_id = p_check_id AND state = 'success'
+);
+
+CREATE TABLE IF NOT EXISTS verter (
+    id serial PRIMARY KEY,
+    check_id bigint REFERENCES checks,
+    state status,
+    time time,
+    CHECK (ch_verter(check_id))
 );
 
 CREATE TABLE IF NOT EXISTS transferred_points (
@@ -136,7 +145,6 @@ CALL import_csv('friends', 'friends.csv', ';');
 CALL import_csv('recommendations', 'recommends.csv', ';');
 CALL import_csv('time_tracking', 'timetrack.csv', ';');
 CALL import_csv('transferred_points', 'transfer.csv', ';');
-CALL import_csv('verter', 'verter.csv', ';');
 CALL import_csv('xp', 'xp.csv', ';');
 -- CALL import_csv('p2p', 'p2p.csv', ';');
 INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (1, 'bread', 'start', '15:00:00');
@@ -156,6 +164,7 @@ INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (7, 'monster', 'fa
 INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (8, 'toster', 'start', '15:00:00');
 INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (8, 'toster', 'success', '15:20:00');
 INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (9, 'monster', 'start', '15:20:00');
+CALL import_csv('verter', 'verter.csv', ';');
 
 
 SELECT SETVAL('checks_id_seq', (SELECT MAX(id) FROM checks));
