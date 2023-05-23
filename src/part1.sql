@@ -62,9 +62,13 @@ CREATE OR REPLACE FUNCTION ch_verter (
     p_check_id bigint
 )
 RETURNS BOOLEAN
-RETURN EXISTS (
+AS $$
+BEGIN
+    RETURN EXISTS (
         SELECT * FROM p2p WHERE check_id = p_check_id AND state = 'success'
-);
+    );
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS verter (
     id serial PRIMARY KEY,
@@ -172,3 +176,25 @@ SELECT SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
 SELECT SETVAL('verter_id_seq', (SELECT MAX(id) FROM verter));
 SELECT SETVAL('transferred_points_id_seq', (SELECT MAX(id) FROM transferred_points));
 SELECT SETVAL('xp_id_seq', (SELECT MAX(id) FROM xp));
+
+CREATE OR REPLACE FUNCTION checks_status (
+    p_check_id bigint
+)
+RETURNS status
+AS $$
+BEGIN
+    IF (
+        EXISTS (
+            SELECT * FROM verter WHERE check_id = p_check_id
+        )
+    ) THEN
+        RETURN (
+            SELECT state FROM verter WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
+        );
+    ELSE
+        RETURN (
+            SELECT state FROM p2p WHERE check_id = p_check_id ORDER BY id DESC LIMIT 1
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
