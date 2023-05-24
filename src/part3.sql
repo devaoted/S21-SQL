@@ -12,7 +12,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2
+-- 2 Тут можно добавить проверку WHERE checks_status(check_id) = 'success'
+-- но так как ch_xp проверяет это при вставке, то нет необходимости
 
-
+CREATE OR REPLACE FUNCTION get_xp()
+RETURNS TABLE (Peer text, Task text, XP float) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT checks.peer, checks.task, xp_amount FROM xp JOIN checks ON check_id = checks.id;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
 
