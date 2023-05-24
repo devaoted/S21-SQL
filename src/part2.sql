@@ -121,18 +121,12 @@ BEGIN
         RAISE EXCEPTION 'Количество XP превышает максимальное доступное для задачи';
     END IF;
 
-    RAISE NOTICE 'hello';
-    IF NOT EXISTS (SELECT * FROM p2p WHERE check_id = NEW.check_id AND state = 'success') THEN
-        RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку (p2p)';
+    IF (
+        SELECT checks_status(NEW.check_id) != 'success'
+    ) THEN
+        RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку';
     END IF;
 
-    PERFORM * FROM verter WHERE check_id = NEW.check_id;
-    IF FOUND THEN
-        IF NOT EXISTS (SELECT * FROM verter WHERE check_id = NEW.check_id AND state = 'success') THEN
-            -- Поле Check не ссылается на успешную проверку
-            RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку (verter)';
-        END IF;
-    END IF;
     -- Запись прошла проверку, добавляем её в таблицу XP
     RETURN NEW;
 EXCEPTION
