@@ -175,23 +175,26 @@ CREATE OR REPLACE FUNCTION ch_p2p (
 )
 RETURNS BOOLEAN
 AS $$
+DECLARE
+    count int;
 BEGIN
-    IF (
+    count := (
         WITH checked AS (
             SELECT peer, task FROM checks WHERE id = p_check_id
         )
-        SELECT (
-            SELECT COUNT(*)
-            FROM p2p JOIN checks ON p2p.check_id = checks.id
-                INNER JOIN checked ON checks.peer = checked.peer
-                    AND checks.task = checked.task
-            WHERE p2p.checking_peer = p_checking_peer
-                AND p2p.id < p_id
-        ) % 2 = 0
+        SELECT COUNT(*)
+        FROM p2p JOIN checks ON p2p.check_id = checks.id
+            INNER JOIN checked ON checks.peer = checked.peer
+                AND checks.task = checked.task
+        WHERE p2p.checking_peer = p_checking_peer
+            AND p2p.id < p_id
+    );
+    IF (
+        p_state = 'start'
     ) THEN
-        RETURN p_state = 'start';
+        RETURN count = 0;
     ELSE
-        RETURN p_state != 'start';
+        RETURN count = 1;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
