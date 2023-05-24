@@ -140,10 +140,26 @@ CREATE TABLE IF NOT EXISTS recommendations (
     recommended_peer text REFERENCES peers
 );
 
+CREATE OR REPLACE FUNCTION ch_xp (
+    p_check_id bigint,
+    p_xp_amount float
+)
+RETURNS BOOLEAN
+AS $$
+BEGIN
+    RETURN (
+        (SELECT max_xp FROM tasks WHERE title = (
+            SELECT task FROM checks WHERE id = p_check_id
+        )) >= p_xp_amount AND (SELECT checks_status(p_check_id) = 'success')
+    );
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS xp (
     id serial PRIMARY KEY,
     check_id bigint REFERENCES checks,
-    xp_amount float
+    xp_amount float,
+    CHECK (ch_xp(check_id, xp_amount))
 );
 
 CREATE TABLE IF NOT EXISTS time_tracking (
