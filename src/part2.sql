@@ -1,26 +1,37 @@
 -- 1
 CREATE OR REPLACE PROCEDURE add_p2p(
-    IN verified_nickname text,
-    IN verifier_nickname text,
-    IN task_name text,
-    IN p2p_status status,
-    IN ptime time
+    IN p_peer text,
+    IN p_task text,
+    IN p_checking_peer text,
+    IN p_state status,
+    IN p_time time
 )
 AS $$
 DECLARE 
-    check_id INT;
+    v_check_id INT;
 BEGIN
-    IF (p2p_status = 'start') THEN
+    IF (p_state = 'start') THEN
         INSERT INTO checks (peer, task, date)
-        VALUES (verified_nickname, task_name, CURRENT_DATE);
-        check_id := currval(pg_get_serial_sequence('checks', 'id'));
+        VALUES (p_peer, p_task, CURRENT_DATE);
+        v_check_id := currval(pg_get_serial_sequence('checks', 'id'));
     ELSE
-        SELECT MAX(id) INTO check_id 
-        FROM checks WHERE peer = verified_nickname AND task = task_name; 
+        WITH p2p_checks AS (
+            SELECT check_id, COUNT(*)
+            FROM p2p JOIN checks ON check_id = checks.id
+            WHERE peer = p_peer AND task = p_task
+                AND checking_peer = p_checking_peer
+            GROUP BY check_id
+        )
+        SELECT check_id INTO v_check_id
+        FROM p2p_checks WHERE count = 1;
+        
+        IF v_check_id IS NULL THEN
+            RAISE 'p2p check was not started for: peer %, task %, checking_peer %', p_peer, p_task, p_checking_peer;
+        END IF;
     END IF;
 
     INSERT INTO P2P (check_id, checking_peer, state, time)
-    VALUES (check_id, verifier_nickname, p2p_status, ptime);
+    VALUES (v_check_id, p_checking_peer, p_state, p_time);
 END;
 $$
 LANGUAGE plpgsql;
