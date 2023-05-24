@@ -163,7 +163,9 @@ CREATE TABLE IF NOT EXISTS xp (
 );
 
 CREATE OR REPLACE FUNCTION ch_time_tracking (
-    p_date date
+    p_date date,
+    p_peer text,
+    p_state int
 )
 RETURNS BOOLEAN
 AS $$
@@ -174,16 +176,21 @@ BEGIN
         SELECT date FROM time_tracking ORDER BY id DESC LIMIT 1
     );
     IF (
-        v_date != p_date
+        v_date = p_date
     ) THEN
+        RETURN (
+            SELECT (SELECT state FROM time_tracking WHERE date = p_date AND peer = p_peer
+                ORDER BY id DESC LIMIT 1) != p_state
+        );
+    ELSE
         RETURN (
             WITH compare AS (
                 SELECT state, COUNT(*) FROM time_tracking WHERE date = v_date GROUP BY state
             )
-            SELECT MAX(count) = MIN(count) FROM compare
+            SELECT p_state = 1
+                AND COALESCE((SELECT count FROM compare WHERE state = 1), 0)
+                = COALESCE((SELECT count FROM compare WHERE state = 2), 0)
         );
-    ELSE
-        RETURN True;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -194,7 +201,7 @@ CREATE TABLE IF NOT EXISTS time_tracking (
     date date,
     time time,
     state int,
-    CHECK (ch_time_tracking(date))
+    CHECK (ch_time_tracking(date, peer, state))
 );
 
 -- Процедуры импорта и экспорта CSV
@@ -232,11 +239,11 @@ CALL import_csv('peers', 'peers.csv', ';');
 CALL import_csv('tasks', 'tasks.csv', ';');
 CALL import_csv('friends', 'friends.csv', ';');
 CALL import_csv('recommendations', 'recommends.csv', ';');
-CALL import_csv('time_tracking', 'timetrack.csv', ';');
 CALL import_csv('transferred_points', 'transfer.csv', ';');
 -- CALL import_csv('checks', 'checks.csv', ';');
 -- CALL import_csv('p2p', 'p2p.csv', ';');
 -- CALL import_csv('verter', 'verter.csv', ';');
+-- CALL import_csv('time_tracking', 'timetrack.csv', ';');
 
 INSERT INTO checks (peer, task, date) VALUES ('toster', 'C2_SimpleBashUtils', '2023-04-19');
 INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (1, 'bread', 'start', '15:00:00');
@@ -282,8 +289,18 @@ INSERT INTO p2p (check_id, checking_peer, state, time) VALUES (9, 'bread', 'star
 
 CALL import_csv('xp', 'xp.csv', ';');
 
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('toster', '2023-04-22', '13:37:00', 1);
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('toster', '2023-04-22', '15:48:00', 2);
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('toster', '2023-04-22', '16:02:00', 1);
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('toster', '2023-04-22', '20:00:00', 2);
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('monster', '2023-04-22', '21:00:00', 1);
+INSERT INTO time_tracking (peer, date, time, state) VALUES ('monster', '2023-04-22', '22:00:00', 2);
+
 -- SELECT SETVAL('checks_id_seq', (SELECT MAX(id) FROM checks));
 -- SELECT SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
 -- SELECT SETVAL('verter_id_seq', (SELECT MAX(id) FROM verter));
+-- SELECT SETVAL('time_tracking_id_seq', (SELECT MAX(id) FROM time_tracking));
 SELECT SETVAL('transferred_points_id_seq', (SELECT MAX(id) FROM transferred_points));
 SELECT SETVAL('xp_id_seq', (SELECT MAX(id) FROM xp));
+SELECT SETVAL('friends_id_seq', (SELECT MAX(id) FROM friends));
+SELECT SETVAL('recommendations_id_seq', (SELECT MAX(id) FROM recommendations));
