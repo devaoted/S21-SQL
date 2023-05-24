@@ -4,7 +4,7 @@ id;peer;task;date
 3;toster;C4_s21_decimal;2023-04-21
 4;puzzle;C2_SimpleBashUtils;2023-04-22
 5;pizza;C2_SimpleBashUtils;2023-04-22
-6;monster;C3_s21_string+;2023-04-22
-7;gifts;C3_s21_string+;2023-04-22
+6;puzzle;C3_s21_string+;2023-04-22
+7;puzzle;C4_s21_decimal;2023-04-22
 8;pizza;C2_SimpleBashUtils;2023-04-23
-9;gifts;C3_s21_string+;2023-04-23
+9;puzzle;C4_s21_decimal;2023-04-23

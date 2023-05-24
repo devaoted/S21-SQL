@@ -9,10 +9,10 @@ id;check_id;checking_peer;state;time
 8;4;pizza;success;15:20:00
 9;5;puzzle;start;15:30:00
 10;5;puzzle;success;15:50:00
-11;6;gifts;start;16:00:00
-12;6;gifts;success;16:25:00
-13;7;monster;start;16:30:00
-14;7;monster;failure;16:45:00
+11;6;toster;start;16:00:00
+12;6;toster;success;16:25:00
+13;7;toster;start;16:30:00
+14;7;toster;failure;16:45:00
 15;8;toster;start;15:00:00
 16;8;toster;success;15:20:00
-17;9;monster;start;15:20:00
+17;9;bread;start;15:20:00
