@@ -192,9 +192,9 @@ BEGIN
     IF (
         p_state = 'start'
     ) THEN
-        RETURN count = 0;
+        RETURN count % 2 = 0;
     ELSE
-        RETURN count = 1;
+        RETURN count % 2 = 1;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
