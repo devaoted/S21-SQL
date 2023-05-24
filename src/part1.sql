@@ -1,7 +1,7 @@
 -- Для пересоздания базы, раскомменчиваем и запускаем всё.
 DROP TABLE IF EXISTS peers, tasks, p2p, verter, checks, transferred_points, friends, recommendations, xp, time_tracking;
 DROP PROCEDURE IF EXISTS import_csv(text, text, char), export_csv(text, text, char);
-DROP FUNCTION IF EXISTS checks_status(bigint), ch_checks(bigint, text, text), ch_p2p(bigint, bigint, text, status), ch_verter(bigint), ch_xp(bigint, float), ch_time_tracking(bigint, date, text, int);
+DROP FUNCTION IF EXISTS checks_status(bigint), ch_checks(bigint, text, text), ch_p2p(bigint, bigint, text, status), ch_verter(bigint, bigint, status), ch_xp(bigint, float), ch_time_tracking(bigint, date, text, int);
 DROP TYPE IF EXISTS status;
 
 -- Таблицы
@@ -183,10 +183,10 @@ BEGIN
             SELECT peer, task FROM checks WHERE id = p_check_id
         )
         SELECT COUNT(*)
-        FROM p2p JOIN checks ON p2p.check_id = checks.id
+        FROM p2p JOIN checks ON check_id = checks.id
             INNER JOIN checked ON checks.peer = checked.peer
                 AND checks.task = checked.task
-        WHERE p2p.checking_peer = p_checking_peer
+        WHERE checking_peer = p_checking_peer
             AND p2p.id < p_id
     );
     IF (
@@ -200,14 +200,34 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION ch_verter (
-    p_check_id bigint
+    p_id bigint,
+    p_check_id bigint,
+    p_state status
 )
 RETURNS BOOLEAN
 AS $$
+DECLARE
+    count int;
 BEGIN
-    RETURN EXISTS (
-        SELECT * FROM p2p WHERE check_id = p_check_id AND state = 'success'
-    );
+    IF (
+        EXISTS (
+            SELECT * FROM p2p WHERE check_id = p_check_id AND state = 'success'
+        )
+    ) THEN
+        count := (
+            SELECT COUNT(*) FROM verter
+            WHERE check_id = p_check_id AND verter.id < p_id
+        );
+        IF (
+            p_state = 'start'
+        ) THEN
+            RETURN count = 0;
+        ELSE
+            RETURN count = 1;
+        END IF;
+    ELSE
+        RETURN False;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -263,7 +283,7 @@ $$ LANGUAGE plpgsql;
 
 -- Добавление проверок
 ALTER TABLE checks ADD CHECK (ch_checks(id, peer, task));
-ALTER TABLE verter ADD CHECK (ch_verter(check_id));
+ALTER TABLE verter ADD CHECK (ch_verter(id, check_id, state));
 ALTER TABLE p2p ADD CHECK (ch_p2p(id, check_id, checking_peer, state));
 ALTER TABLE xp ADD CHECK (ch_xp(check_id, xp_amount));
 ALTER TABLE time_tracking ADD CHECK (ch_time_tracking(id, date, peer, state));
