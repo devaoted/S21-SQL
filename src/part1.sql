@@ -162,12 +162,39 @@ CREATE TABLE IF NOT EXISTS xp (
     CHECK (ch_xp(check_id, xp_amount))
 );
 
+CREATE OR REPLACE FUNCTION ch_time_tracking (
+    p_date date
+)
+RETURNS BOOLEAN
+AS $$
+DECLARE 
+    v_date date;
+BEGIN
+    v_date := (
+        SELECT date FROM time_tracking ORDER BY id DESC LIMIT 1
+    );
+    IF (
+        v_date != p_date
+    ) THEN
+        RETURN (
+            WITH compare AS (
+                SELECT state, COUNT(*) FROM time_tracking WHERE date = v_date GROUP BY state
+            )
+            SELECT MAX(count) = MIN(count) FROM compare
+        );
+    ELSE
+        RETURN True;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS time_tracking (
     id serial PRIMARY KEY,
     peer text REFERENCES peers,
     date date,
     time time,
-    state int
+    state int,
+    CHECK (ch_time_tracking(date))
 );
 
 -- Процедуры импорта и экспорта CSV
