@@ -264,7 +264,7 @@ BEGIN
         v_date = p_date
     ) THEN
         RETURN (
-            SELECT (SELECT state FROM time_tracking
+            SELECT p_state BETWEEN 1 AND 2 AND (SELECT state FROM time_tracking
                 WHERE id < p_id AND date = p_date AND peer = p_peer
                 ORDER BY id DESC LIMIT 1) != p_state
         );
