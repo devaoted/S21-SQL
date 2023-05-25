@@ -24,3 +24,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 3 ch_time_tracking проверяет при вставке что первая за день запись state = 1
+-- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
+
+CREATE OR REPLACE FUNCTION time_tracking_no_leave (
+    p_date date
+)
+RETURNS TABLE (Peer text) AS $$
+BEGIN
+    RETURN QUERY
+    WITH peer_count AS (
+        SELECT tt.peer, COUNT(*) FROM time_tracking tt WHERE date = p_date GROUP BY tt.peer
+    )
+    SELECT pc.peer FROM peer_count pc WHERE count > 2;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
