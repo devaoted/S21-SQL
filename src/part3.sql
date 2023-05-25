@@ -47,11 +47,14 @@ CREATE OR REPLACE FUNCTION get_transferred_points_change()
 RETURNS TABLE (Peer text, PointsChange int) AS $$
 BEGIN
     RETURN QUERY
-    SELECT tp.checking_peer, CAST(SUM(tp.points_amount - COALESCE(tp2.points_amount, 0)) AS int)
-    FROM transferred_points tp
-    LEFT JOIN transferred_points tp2 ON tp.checked_peer = tp2.checking_peer
-        AND tp.checking_peer = tp2.checked_peer
-    GROUP BY tp.checking_peer ORDER BY sum DESC;
+    WITH add AS (
+        SELECT checking_peer AS peer, SUM(points_amount) FROM transferred_points GROUP BY checking_peer
+    ), deduct AS (
+        SELECT checked_peer AS peer, -SUM(points_amount) FROM transferred_points GROUP BY checked_peer
+    )
+    SELECT ad.peer, CAST(SUM(sum) AS int) FROM (
+        SELECT * FROM add UNION SELECT * FROM deduct
+    ) ad GROUP BY ad.peer ORDER BY sum DESC;
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
