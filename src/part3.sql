@@ -59,6 +59,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 5
+
+CREATE OR REPLACE FUNCTION get_transferred_points_change2()
+RETURNS TABLE (Peer text, PointsChange int) AS $$
+BEGIN
+    RETURN QUERY
+    WITH add AS (
+        SELECT Peer1 AS peer, SUM(PointsAmount) FROM get_transferred_points() GROUP BY Peer1
+    ), deduct AS (
+        SELECT Peer2 AS peer, -SUM(PointsAmount) FROM get_transferred_points() GROUP BY Peer2
+    )
+    SELECT ad.peer, CAST(SUM(sum) AS int) FROM (
+        SELECT * FROM add UNION SELECT * FROM deduct
+    ) ad GROUP BY ad.peer ORDER BY sum DESC;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
 
