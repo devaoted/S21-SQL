@@ -27,7 +27,7 @@ $$ LANGUAGE plpgsql;
 -- 3 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
 
-CREATE OR REPLACE FUNCTION time_tracking_no_leave (
+CREATE OR REPLACE FUNCTION get_time_tracking_no_leave (
     p_date date
 )
 RETURNS TABLE (Peer text) AS $$
@@ -41,10 +41,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 4
+
+CREATE OR REPLACE FUNCTION get_transferred_points_change()
+RETURNS TABLE (Peer text, PointsChange int) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT tp.checking_peer, CAST(SUM(tp.points_amount - COALESCE(tp2.points_amount, 0)) AS int)
+    FROM transferred_points tp
+    LEFT JOIN transferred_points tp2 ON tp.checked_peer = tp2.checking_peer
+        AND tp.checking_peer = tp2.checked_peer
+    GROUP BY tp.checking_peer ORDER BY sum DESC;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
 
-CREATE OR REPLACE FUNCTION time_tracking_leaves (
+CREATE OR REPLACE FUNCTION get_time_tracking_leaves (
     p_times int,
     p_days int
 )
