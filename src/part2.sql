@@ -1,4 +1,5 @@
 -- DROP PROCEDURE IF EXISTS add_p2p(text, text, text, status, time), add_verter(text, text, status, time);
+-- DROP FUNCTION update_points, validate_xp_record
 
 -- 1
 CREATE OR REPLACE PROCEDURE add_p2p(
@@ -35,6 +36,11 @@ BEGIN
 
     INSERT INTO P2P (check_id, checking_peer, state, time)
     VALUES (v_check_id, p_checking_peer, p_state, p_time);
+EXCEPTION
+    WHEN OTHERS THEN
+            PERFORM SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
+            PERFORM SETVAL('checks_id_seq', (SELECT MAX(id) FROM checks));
+        RAISE;
 END;
 $$
 LANGUAGE plpgsql;
@@ -52,7 +58,8 @@ DECLARE
 BEGIN
     v_check_id := (
         SELECT check_id FROM p2p JOIN checks ON check_id = checks.id
-        WHERE peer = p_peer AND task = p_task AND state = 'success' AND time <= p_time
+        WHERE peer = p_peer AND task = p_task AND state = 'success' 
+        AND time <= p_time
         ORDER BY date DESC, time DESC LIMIT 1
     );
 
