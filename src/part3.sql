@@ -151,6 +151,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 9 
+CREATE OR REPLACE FUNCTION two_blocks_percentage (
+    block1 text,
+    block2 text
+)
+RETURNS TABLE (StartedBlock1 float, StartedBlock2 float,
+                StartedBothBlocks float, DidntStartAnyBlock float) AS $$
+DECLARE 
+    total_peers int;
+    block1_count int;
+    block2_count int;
+    both_blocks_count int;
+    none_blocks_count int;
+BEGIN
+    CREATE TEMPORARY TABLE t_block1 AS
+        SELECT DISTINCT peer FROM get_successful_checks
+            WHERE task ~ ('^' || block1 || '[1-9]');
+    CREATE TEMPORARY TABLE t_block2 AS
+        SELECT DISTINCT peer FROM get_successful_checks
+            WHERE task ~ ('^' || block2 || '[1-9]');
+
+    SELECT COUNT(*) INTO total_peers FROM peers;
+    SELECT COUNT(*) INTO block1_count FROM (
+        SELECT * FROM t_block1 EXCEPT SELECT * FROM t_block2) AS ex1;
+    SELECT COUNT(*) INTO block2_count FROM (
+        SELECT * FROM t_block2 EXCEPT SELECT * FROM t_block1) AS ex2;
+    SELECT COUNT(*) INTO both_blocks_count FROM (
+        SELECT * FROM t_block2 INTERSECT SELECT * FROM t_block1) AS inter;
+    none_blocks_count := total_peers - block1_count - block2_count - both_blocks_count;
+
+    StartedBlock1 := ROUND(block1_count * 100.0 / total_peers, 1);
+    StartedBlock2 := ROUND(block2_count * 100.0 / total_peers, 1);
+    StartedBothBlocks := ROUND(both_blocks_count * 100.0 / total_peers, 1);
+    DidntStartAnyBlock := ROUND(none_blocks_count * 100.0 / total_peers, 1);
+
+    RETURN QUERY
+    SELECT StartedBlock1, StartedBlock2, StartedBothBlocks, DidntStartAnyBlock;
+
+    DROP TABLE IF EXISTS t_block1, t_block2;
+END;
+$$ LANGUAGE plpgsql;
+
+
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
 

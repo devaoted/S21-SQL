@@ -1,6 +1,6 @@
 -- Для пересоздания базы, раскомменчиваем и запускаем 
 
-DROP VIEW get_successful_checks; -- добавлено снизу для удобства
+DROP VIEW IF EXISTS get_successful_checks; -- добавлено снизу для удобства
 -- part1
 DROP TABLE IF EXISTS peers, tasks, p2p, verter, checks, transferred_points, friends, recommendations, xp, time_tracking;
 DROP PROCEDURE IF EXISTS import_csv(text, text, char), export_csv(text, text, char);
