@@ -1,49 +1,82 @@
+-- DROP PROCEDURE IF EXISTS add_p2p(text, text, text, status, time), add_verter(text, text, status, time);
+-- DROP FUNCTION update_points, validate_xp_record
+
 -- 1
 CREATE OR REPLACE PROCEDURE add_p2p(
-    IN verified_nickname text,
-    IN verifier_nickname text,
-    IN task_name text,
-    IN p2p_status status,
-    IN ptime time
+    IN p_peer text,
+    IN p_task text,
+    IN p_checking_peer text,
+    IN p_state status,
+    IN p_time time
 )
 AS $$
 DECLARE 
-    check_id INT;
+    v_check_id bigint;
 BEGIN
-    IF (p2p_status = 'start') THEN
+    IF (p_state = 'start') THEN
         INSERT INTO checks (peer, task, date)
-        VALUES (verified_nickname, task_name, CURRENT_DATE);
-        check_id := currval(pg_get_serial_sequence('checks', 'id'));
+        VALUES (p_peer, p_task, CURRENT_DATE);
+        v_check_id := currval(pg_get_serial_sequence('checks', 'id'));
     ELSE
-        SELECT MAX(id) INTO check_id 
-        FROM checks WHERE peer = verified_nickname AND task = task_name; 
+        v_check_id := (
+            WITH p2p_checks AS (
+                SELECT check_id, COUNT(*)
+                FROM p2p JOIN checks ON check_id = checks.id
+                WHERE peer = p_peer AND task = p_task AND checking_peer = p_checking_peer
+                    AND time <= p_time
+                GROUP BY check_id
+            )
+            SELECT check_id FROM p2p_checks WHERE count = 1
+        );
+
+        IF v_check_id IS NULL THEN
+            RAISE 'p2p check was not started for: peer %, task %, checking_peer %, time <= %', p_peer, p_task, p_checking_peer, p_time;
+        END IF;
     END IF;
 
     INSERT INTO P2P (check_id, checking_peer, state, time)
-    VALUES (check_id, verifier_nickname, p2p_status, ptime);
+    VALUES (v_check_id, p_checking_peer, p_state, p_time);
+EXCEPTION
+    WHEN OTHERS THEN
+            PERFORM SETVAL('p2p_id_seq', (SELECT MAX(id) FROM p2p));
+            PERFORM SETVAL('checks_id_seq', (SELECT MAX(id) FROM checks));
+        RAISE;
 END;
 $$
 LANGUAGE plpgsql;
 
 -- 2
 CREATE OR REPLACE PROCEDURE add_verter(
-    IN verified_nickname text,
-    IN task_name text,
-    IN p2p_status status,
-    IN ptime time
+    IN p_peer text,
+    IN p_task text,
+    IN p_state status,
+    IN p_time time
 )
 AS $$
 DECLARE
-    max_id int;
+    v_check_id bigint;
 BEGIN
+    v_check_id := (
+        SELECT check_id FROM p2p JOIN checks ON check_id = checks.id
+        WHERE peer = p_peer AND task = p_task AND state = 'success' 
+        AND time <= p_time
+        ORDER BY date DESC, time DESC LIMIT 1
+    );
 
-    SELECT p.check_id, MAX(p.time) INTO max_id FROM p2p p
-    JOIN checks c ON p.check_id = c.id
-    WHERE c.peer = 'pizza' AND c.task = 'C7_3DViewer_v1.0' AND p.state = 'success'
-    GROUP BY p.check_id;
+    IF v_check_id IS NULL THEN
+        RAISE 'p2p check was not successfully completed for: peer %, task %, time <= %', p_peer, p_task, p_time;
+    END IF;
+
+    IF (
+        p_state != 'start' AND NOT EXISTS (
+            SELECT * FROM verter WHERE check_id = v_check_id AND time <= p_time
+        )
+    ) THEN
+        RAISE 'verter check was not started for: check_id %, time <= %', v_check_id, p_time;
+    END IF;
 
     INSERT INTO verter (check_id, state, time)
-    VALUES (max_id, p2p_status, ptime);
+    VALUES (v_check_id, p_state, p_time);
 END;
 $$
 LANGUAGE plpgsql;
@@ -95,18 +128,12 @@ BEGIN
         RAISE EXCEPTION 'Количество XP превышает максимальное доступное для задачи';
     END IF;
 
-    RAISE NOTICE 'hello';
-    IF NOT EXISTS (SELECT * FROM p2p WHERE check_id = NEW.check_id AND state = 'success') THEN
-        RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку (p2p)';
+    IF (
+        SELECT checks_status(NEW.check_id) != 'success'
+    ) THEN
+        RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку';
     END IF;
 
-    PERFORM * FROM verter WHERE check_id = NEW.check_id;
-    IF FOUND THEN
-        IF NOT EXISTS (SELECT * FROM verter WHERE check_id = NEW.check_id AND state = 'success') THEN
-            -- Поле Check не ссылается на успешную проверку
-            RAISE EXCEPTION 'Поле Check должно ссылаться на успешную проверку (verter)';
-        END IF;
-    END IF;
     -- Запись прошла проверку, добавляем её в таблицу XP
     RETURN NEW;
 EXCEPTION
