@@ -1,4 +1,4 @@
--- DROP FUNCTION IF EXISTS add_p2p, add_vrter, check_completed_block, get_most_frequent_tasks, get_time_tracking_leaves, get_time_tracking_no_leave, get_transferred_points, get_transferred_points_change, get_transferred_points_change2, get_xp
+-- DROP FUNCTION IF EXISTS add_p2p, add_vrter, check_completed_block, get_most_frequent_tasks, get_time_tracking_leaves, get_time_tracking_no_leave, get_transferred_points, get_transferred_points_change, get_transferred_points_change2, get_xp, find_checker;
 -- 1
 CREATE OR REPLACE FUNCTION get_transferred_points()
 RETURNS TABLE (Peer1 text, Peer2 text, PointsAmount int) AS $$
@@ -129,6 +129,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 8
+CREATE OR REPLACE FUNCTION find_checker()
+RETURNS TABLE (Peer text, RecommendedPeer text) AS $$
+BEGIN
+    RETURN QUERY
+    WITH recommends AS (
+        SELECT peer1, recommended_peer peer2, COUNT(*) as total FROM friends f
+        JOIN recommendations r ON f.peer2 = r.peer
+        WHERE peer1 != recommended_peer
+        GROUP BY 1, 2
+    )
+    SELECT DISTINCT r.peer1, MAX(r.peer2)
+    FROM recommends r
+    WHERE r.total = (
+        SELECT MAX(total)
+        FROM recommends
+        WHERE peer1 = r.peer1
+    )
+    GROUP BY 1;
+END;
+$$ LANGUAGE plpgsql;
 
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей

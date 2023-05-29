@@ -11,7 +11,7 @@ DROP PROCEDURE IF EXISTS add_p2p(text, text, text, status, time), add_verter(tex
 DROP FUNCTION IF EXISTS update_points, validate_xp_record;
 
 -- part3
-DROP FUNCTION IF EXISTS add_p2p, add_vrter, check_completed_block, get_most_frequent_tasks, get_time_tracking_leaves, get_time_tracking_no_leave, get_transferred_points, get_transferred_points_change, get_transferred_points_change2, get_xp;
+DROP FUNCTION IF EXISTS add_p2p, add_vrter, check_completed_block, get_most_frequent_tasks, get_time_tracking_leaves, get_time_tracking_no_leave, get_transferred_points, get_transferred_points_change, get_transferred_points_change2, get_xp, find_checker;
 
 -- Enum type, дроп после всего из-за ошибок (depends on...)
 DROP TYPE IF EXISTS status;
