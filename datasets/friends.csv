@@ -4,3 +4,8 @@ id;peer1;peer2
 3;pizza;monster
 4;monster;gifts
 5;gifts;toster
+6;puzzle;toster
+7;pizza;puzzle
+8;monster;pizza
+9;gifts;monster
+10;toster;gifts
