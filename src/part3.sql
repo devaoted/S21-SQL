@@ -220,6 +220,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 11
+CREATE OR REPLACE FUNCTION check_tasks (
+    task1 text,
+    task2 text,
+    task3 text
+) RETURNS TABLE (Peer text) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT checks.peer FROM checks
+        WHERE checks_status(id) = 'success' AND task = task1
+    INTERSECT
+    SELECT checks.peer FROM checks
+        WHERE checks_status(id) = 'success' AND task = task2
+    EXCEPT 
+    SELECT checks.peer FROM checks
+        WHERE checks_status(id) = 'success' AND task = task3;
+END;
+$$ LANGUAGE plpgsql;
 
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
