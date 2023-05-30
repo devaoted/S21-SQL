@@ -6,3 +6,5 @@ C5_21_matrix;C4_s21_decimal;200
 C6_SmartCalc_v1.0;C5_21_matrix;500
 C7_3DViewer_v1.0;C6_SmartCalc_v1.0;750
 CPP1_s21_matrix+;null;300
+SQL1_bootcamp;null;1500
+SQL2_info21;SQL1_bootcamp;500

@@ -1,6 +1,7 @@
--- Для пересоздания базы, раскомменчиваем и запускаем 
+-- part1.sql запускаем один раз и забываем, повторный запуск всё пересоздаст.
 
-DROP VIEW get_successful_checks; -- добавлено снизу для удобства
+DROP VIEW IF EXISTS get_successful_checks; -- добавлено снизу для удобства
+
 -- part1
 DROP TABLE IF EXISTS peers, tasks, p2p, verter, checks, transferred_points, friends, recommendations, xp, time_tracking;
 DROP PROCEDURE IF EXISTS import_csv(text, text, char), export_csv(text, text, char);
@@ -107,7 +108,7 @@ CREATE OR REPLACE PROCEDURE export_csv(
 ) AS 
     $$
     DECLARE
-        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
+        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/info_21/datasets/';
     BEGIN
         EXECUTE format('COPY %s TO ''%s'' DELIMITER ''%s'' CSV HEADER NULL AS ''null'';', table_name, data_path || csv_file, delimiter);
     END;
