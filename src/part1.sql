@@ -1,19 +1,20 @@
 -- Для пересоздания базы, раскомменчиваем и запускаем 
 
 DROP VIEW IF EXISTS get_successful_checks; -- добавлено снизу для удобства
--- part1
+
+part1
 DROP TABLE IF EXISTS peers, tasks, p2p, verter, checks, transferred_points, friends, recommendations, xp, time_tracking;
 DROP PROCEDURE IF EXISTS import_csv(text, text, char), export_csv(text, text, char);
 DROP FUNCTION IF EXISTS checks_status(bigint), ch_checks(bigint, text, text), ch_p2p(bigint, bigint, text, status), ch_verter(bigint, bigint, status), ch_xp(bigint, float), ch_time_tracking(bigint, date, text, int);
 
--- part2
+part2
 DROP PROCEDURE IF EXISTS add_p2p(text, text, text, status, time), add_verter(text, text, status, time);
 DROP FUNCTION IF EXISTS update_points, validate_xp_record;
 
--- part3
+part3
 DROP FUNCTION IF EXISTS add_p2p, add_vrter, check_completed_block, get_most_frequent_tasks, get_time_tracking_leaves, get_time_tracking_no_leave, get_transferred_points, get_transferred_points_change, get_transferred_points_change2, get_xp, find_checker;
 
--- Enum type, дроп после всего из-за ошибок (depends on...)
+Enum type, дроп после всего из-за ошибок (depends on...)
 DROP TYPE IF EXISTS status;
 
 -- Таблицы
@@ -93,7 +94,7 @@ CREATE OR REPLACE PROCEDURE import_csv(
 ) AS 
     $$
     DECLARE
-        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/info_21/datasets/';
+        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/info_21/datasets';
     BEGIN
         EXECUTE format('COPY %s FROM ''%s'' DELIMITER ''%s'' CSV HEADER NULL AS ''null'';', table_name, data_path || csv_file, delimiter);
     END;
@@ -107,7 +108,7 @@ CREATE OR REPLACE PROCEDURE export_csv(
 ) AS 
     $$
     DECLARE
-        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/sql2_info21/datasets/';
+        data_path text := '/Users/vladislavepanesnikov/Desktop/programming/school21/sber/sql/info_21/datasets';
     BEGIN
         EXECUTE format('COPY %s TO ''%s'' DELIMITER ''%s'' CSV HEADER NULL AS ''null'';', table_name, data_path || csv_file, delimiter);
     END;
