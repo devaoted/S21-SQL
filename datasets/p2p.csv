@@ -30,3 +30,9 @@ id;check_id;checking_peer;state;time
 29;15;toster;success;18:30:00
 30;16;toster;start;18:00:00
 31;16;toster;success;18:30:00
+32;17;gifts;start;20:00:00
+33;17;gifts;success;20:30:00
+34;18;monster;start;20:30:00
+35;18;monster;failure;21:00:00
+36;19;puzzle;start;20:30:00
+37;19;puzzle;failure;21:00:00

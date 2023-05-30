@@ -193,6 +193,33 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 3.10
+
+CREATE OR REPLACE FUNCTION birthday_percentage()
+RETURNS TABLE (SuccessfulChecks float, UnsuccessfulChecks float) AS $$
+DECLARE
+    total_peers int;
+BEGIN
+    SELECT COUNT(*) INTO total_peers FROM peers;
+    RETURN QUERY
+    SELECT SUM(CASE WHEN status = true THEN 1 ELSE 0 END)::float / total_peers,
+           SUM(CASE WHEN status = false THEN 1 ELSE 0 END)::float / total_peers
+    FROM (
+        SELECT DISTINCT peer,
+            CASE WHEN checks_status(checks.id) = 'success' 
+            THEN true ELSE false 
+            END AS status
+        FROM checks
+        JOIN peers ON peers.nickname = checks.peer
+        JOIN p2p ON p2p.check_id = checks.id
+        WHERE (p2p.state = 'failure' OR p2p.state = 'success') AND
+            EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM birthday)
+                AND EXTRACT(DAY FROM date) = EXTRACT(DAY FROM birthday)
+        GROUP BY checks.id
+    ) subquery;   
+END;
+$$ LANGUAGE plpgsql;
+
 
 -- 16 ch_time_tracking проверяет при вставке что первая за день запись state = 1
 -- и state (со значениями 1 или 2) каждой последующей за день записи не равняется предыдущей
